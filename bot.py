@@ -1,10 +1,13 @@
+import asyncio
+import random
 from aiogram import Bot, Dispatcher, types
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import Message
 from aiogram.filters import Command
 from cookies import add_cookie, get_cookie, delete_cookie, is_user_approved, approve_user, list_approved_users
-from config import BOT_TOKEN, APPROVED_ADMINS
+from config import BOT_TOKEN, APPROVED_ADMINS, OWNER_CONTACT_URL, START_IMAGES
 from worker import run_periodic_requests
-import asyncio
+
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -22,7 +25,17 @@ async def check_access(message: Message):
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
-    await message.answer("Welcome! Use /add_cookie, /delete_cookie, or /run if approved.")
+    photo_url = random.choice(START_IMAGES)
+
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Contact Owner", url=OWNER_CONTACT_URL)]
+    ])
+
+    await message.answer_photo(
+        photo_url,
+        caption="👋 Welcome to the Cookie Bot!\n\nUse /add_cookie to begin.\nUse /stop to end a session.",
+        reply_markup=markup
+    )
 
 @dp.message(Command("add_cookie"))
 async def cmd_add_cookie(message: Message):
