@@ -8,6 +8,6 @@ MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = "cookie_store"
 OWNER_CONTACT_URL = "https://t.me/YourUsername"
 
-START_IMAGES = [ ]
+START_IMAGES = ["https://envs.sh/Rgt.jpg" , "https://envs.sh/7tv.jpg" , "https://graph.org/file/dea04b2d615406aeb0181.jpg" , "https://graph.org/file/98b63d3bb84984a68cc76.jpg"]
 
 APPROVED_ADMINS = [1]  # Replace with your Telegram user ID
