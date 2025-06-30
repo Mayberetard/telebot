@@ -9,6 +9,8 @@ import asyncio
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
+user_tasks = {}
+
 C_VALUES = ["A1", "B2", "C3", "D4", "E5", "F6"]
 
 async def check_access(message: Message):
@@ -35,21 +37,34 @@ async def cmd_add_cookie(message: Message):
 
 @dp.message(Command("delete_cookie"))
 async def cmd_delete_cookie(message: Message):
-    if not await check_access(message):
-        return
-    delete_cookie(message.from_user.id)
-    await message.answer("🗑️ Cookie deleted.")
+    user_id = message.from_user.id
+    delete_cookie(user_id)
+    
+    task = user_tasks.pop(user_id, None)
+    if task and not task.done():
+        task.cancel()
+
+    await message.answer("🗑️ Cookie deleted and any running task stopped.")
 
 @dp.message(Command("run"))
 async def cmd_run(message: Message):
+    user_id = message.from_user.id
     if not await check_access(message):
         return
-    cookie = get_cookie(message.from_user.id)
+
+    if user_id in user_tasks:
+        await message.answer("⏳ Your task is already running.")
+        return
+
+    cookie = get_cookie(user_id)
     if not cookie:
         await message.answer("❗ No cookie found. Use /add_cookie first.")
         return
-    await message.answer("🔁 Starting periodic requests every 15 minutes...")
-    asyncio.create_task(run_periodic_requests(message.from_user.id, cookie, message, C_VALUES))
+
+    await message.answer("🔁 Started your request loop. Runs every 15 minutes.")
+
+    task = asyncio.create_task(run_periodic_requests(user_id, cookie, message, C_VALUES))
+    user_tasks[user_id] = task
 
 @dp.message(Command("approve"))
 async def cmd_approve(message: Message):
@@ -69,3 +84,14 @@ async def cmd_list_approved(message: Message):
         return
     users = list_approved_users()
     await message.answer("✅ Approved users:\n" + "\n".join(map(str, users)))
+
+@dp.message(Command("stop"))
+async def cmd_stop(message: Message):
+    user_id = message.from_user.id
+    task = user_tasks.pop(user_id, None)
+
+    if task and not task.done():
+        task.cancel()
+        await message.answer("🛑 Your request loop has been stopped.")
+    else:
+        await message.answer("⚠️ No active task to stop.")
